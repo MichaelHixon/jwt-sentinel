@@ -61,6 +61,10 @@ def parse_jwt(token):
         payload = json.loads(b64url_decode(parts[1]) or "{}")
     except Exception:
         return None, None, None
+    # A segment can decode to valid JSON that isn't an object (list/number/string);
+    # downstream `.get()` calls would crash on it, so reject non-dicts here.
+    if not isinstance(header, dict) or not isinstance(payload, dict):
+        return None, None, None
     return header, payload, parts
 
 
@@ -212,7 +216,9 @@ class BurpExtender(IBurpExtender, IScannerCheck, IContextMenuFactory):
         token = tokens[0]
 
         def send_variant(new_token, tab):
-            new_req = req_str.replace(token, new_token)
+            # Replace only the FIRST occurrence: forged variants share the token's
+            # header/payload prefix, so a global replace could rewrite the wrong span.
+            new_req = req_str.replace(token, new_token, 1)
             svc = msgs[0].getHttpService()
             self._cb.sendToRepeater(svc.getHost(), svc.getPort(),
                                     svc.getProtocol() == "https",
