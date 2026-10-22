@@ -34,9 +34,11 @@ The passive scan runs on every proxied request and response. It extracts each un
 |---------|------------------|----------|
 | `alg:none` | Header `alg` equals `none`. Signature may not be verified. | High |
 | `jku` / `x5u` header | Either header key is present. If unvalidated, it can point signing at an attacker-hosted key set. | High |
+| `jwk` / `x5c` header | Either header key is present. Embedded key material; if the server trusts it, a supplied key can be swapped in to sign forged tokens. | High |
 | Token past `exp` | Payload has an `exp` claim whose value is earlier than the current system time, yet the token is still in traffic. | Medium |
 | Sensitive-looking claim | Any claim key (searched recursively) contains one of: `password`, `pwd`, `secret`, `ssn`, `credit`, `card`, `api_key`, `apikey`, `private`, `pin`. Payloads are base64, not encrypted. | Medium |
 | `kid` header | Header `kid` is present. Flags it as a spot to test for path traversal, SQLi, or command injection in key selection. | Low |
+| `x5t` header | Header `x5t` is present. Certificate-thumbprint key selector; a spot to test for thumbprint confusion or key substitution in key selection. | Low |
 | No `exp` claim | Payload has no `exp`. Token may never expire. | Low |
 | HMAC algorithm | Header `alg` starts with `hs` (HS256/384/512). Candidate for offline secret cracking, and for algorithm confusion if the server also accepts RS. | Information |
 | Asymmetric algorithm | Header `alg` starts with `rs` or `es`. Candidate for RS→HS confusion using the server's public key as the HMAC secret. | Information |

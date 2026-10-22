@@ -93,10 +93,19 @@ def assess(header, payload):
             findings.append(("High",
                              "Header '%s' present — if unvalidated, point it at an attacker-hosted "
                              "key set to sign forged tokens." % h))
+    for h in ("jwk", "x5c"):
+        if h in header:
+            findings.append(("High",
+                             "Header '%s' present — embedded key material; if the server trusts it, a "
+                             "supplied key could be swapped in to sign forged tokens." % h))
     if "kid" in header:
         findings.append(("Low",
                          "Header 'kid' present — test for path traversal / SQLi / command injection "
                          "in key selection."))
+    if "x5t" in header:
+        findings.append(("Low",
+                         "Header 'x5t' present — certificate-thumbprint key selector; test for "
+                         "thumbprint confusion / key substitution in key selection."))
 
     exp = payload.get("exp")
     if exp is not None:
