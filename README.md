@@ -4,7 +4,7 @@ A Burp Suite extension that watches proxied traffic for JSON Web Tokens, raises 
 
 ## Writeup
 
-No writeup yet.
+[The Wristband Says Trust Me: Spotting Bad JWTs in Burp](https://michaelhixon.com/posts/the-wristband-says-trust-me/) walks through what each check catches and how to triage it.
 
 ## Requirements
 
